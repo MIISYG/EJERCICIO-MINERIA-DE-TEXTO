@@ -1,0 +1,258 @@
+---
+title: "Ejercicio_TextMining"
+author: "SoniaPolo_GabrielCriado"
+date: "7/12/2019"
+output: html_document
+---
+##Ejercicio Mineria de Texto en R
+
+#Se instalan las siguientes librerías para desarrollar el ejercicio:
+```{r}
+library(tidyverse)
+library(NLP)
+library(tm)
+library(SnowballC)
+library(RColorBrewer)
+library(wordcloud)
+library(ggplot2)
+library(readr)
+library(cluster)
+library(readxl)
+library(plyr)
+library(dplyr)
+library(readr)
+library(lubridate)
+library(zoo)
+library(scales)
+library(wordcloud2)
+library(ggplot2)
+library(wordcloud)
+library(FactoMineR)
+library(factoextra)
+```
+
+#PASO 1 Se cargan los documentos
+```{r}
+poema_1 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_1.txt")
+poema_2 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_2.txt")
+poema_3 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_3.txt")
+poema_4 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_4.txt")
+poema_5 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_5.txt")
+poema_6 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_6.txt")
+poema_7 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_7.txt")
+poema_8 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_8.txt")
+poema_9 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_9.txt")
+poema_10 <- read_lines("C:/Users/Home/Desktop/MINERIA_TEXTO/Poema_10.txt")
+```
+
+#PASO2. Como cada uno de los documentos posee un numero determinado de lineas o filas,
+#lo que se hace es convertir todos los documentos para que tengan igual número de filas,  
+#para esto, se deben usar varias funciones, por lo tanto se usará  el operador %>% 
+# el cual permite escribir varias funciones asignandolas a una misma variable y las
+# hace más legibles. 
+
+```{r}
+Poema1 <-cbind(rep(1:ceiling(length(poema_1)/10), each = 10) %>% .[1:length(poema_1)],poema_1) %>%
+  data.frame %>%aggregate(poema_1 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_1) %>% as.matrix
+
+Poema2 <-cbind(rep(1:ceiling(length(poema_2)/10), each = 17) %>% .[1:length(poema_2)],poema_2) %>%
+  data.frame %>%aggregate(poema_2 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_2) %>% as.matrix
+
+Poema3 <-cbind(rep(1:ceiling(length(poema_3)/10), each = 17) %>% .[1:length(poema_3)],poema_3) %>%
+  data.frame %>%aggregate(poema_3 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_3) %>% as.matrix
+
+Poema4 <-cbind(rep(1:ceiling(length(poema_4)/10), each = 17) %>% .[1:length(poema_4)],poema_4) %>%
+  data.frame %>%aggregate(poema_4 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_4) %>% as.matrix
+
+Poema5 <-cbind(rep(1:ceiling(length(poema_5)/4), each = 4) %>% .[1:length(poema_5)],poema_5) %>%
+  data.frame %>%aggregate(poema_5 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_5) %>% as.matrix
+
+Poema6 <-cbind(rep(1:ceiling(length(poema_6)/10), each = 12) %>% .[1:length(poema_6)],poema_6) %>%
+  data.frame %>%aggregate(poema_6 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_6) %>% as.matrix
+
+Poema7 <-cbind(rep(1:ceiling(length(poema_7)/10), each = 13) %>% .[1:length(poema_7)],poema_7) %>%
+  data.frame %>%aggregate(poema_7 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_7) %>% as.matrix
+
+Poema8 <-cbind(rep(1:ceiling(length(poema_8)/42), each = 20) %>% .[1:length(poema_8)],poema_8) %>%
+  data.frame %>%aggregate(poema_8 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_8) %>% as.matrix
+
+Poema9 <-cbind(rep(1:ceiling(length(poema_9)/10), each = 16) %>% .[1:length(poema_9)],poema_9) %>%
+  data.frame %>%aggregate(poema_9 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_9) %>% as.matrix
+
+Poema10 <-cbind(rep(1:ceiling(length(poema_10)/8), each = 8) %>% .[1:length(poema_10)],poema_10) %>%
+  data.frame %>%aggregate(poema_10 ~ V1,data = ., FUN = paste, collapse=" ") %>% select(poema_10) %>% as.matrix
+```
+
+#PASO 3. unir todos los documentos en uno solo 
+```{r}
+poemas<- data.frame(Poema1,Poema2,Poema3,Poema4,Poema5,Poema6,Poema7,Poema8,Poema9,Poema10)
+View(poemas)
+```
+
+#PASO 4. pasar todo lo escrito en los docs forma vectorial (Cuerpo de vectotes)
+```{r}
+corpus <- VCorpus(VectorSource(poemas))
+```
+
+
+#PASO 5. Limpieza del texto
+
+# esta funcion nos ayuda a visualizar Tipos de palabras que no agregan nada en el idioma español
+```{r}
+stopwords(kind = "sp")
+```
+
+
+#limpieza de espacios entre palabras
+```{r}
+CleanData <- tm_map(corpus, stripWhitespace)
+```
+
+
+#convierte todas las palabras en minuscula
+```{r}
+CleanData <- tm_map(CleanData, content_transformer(tolower))
+```
+
+
+#todo lo que tiene que ver con articulos y palabras que no agregan valor como preposiciones
+#y muletillas, ademas debe undicarse el idioma en el que estan.
+```{r}
+CleanData <- tm_map(CleanData, removeWords, stopwords("spanish"))
+```
+
+
+#Remueve las puntuaciones
+```{r}
+CleanData <- tm_map(CleanData, removePunctuation)
+```
+
+
+#Palabras internas, derivadas, contracciones, por ej, el mismo verbo en diferentes tiempos
+#las conjuga o las une en una sola palabra.
+```{r}
+CleanData <- tm_map(CleanData, stemDocument, language = "spanish")
+```
+
+
+#por ejemplo, nosotros puede crear una bolsa de palabras que desea remover
+```{r}
+mystopwords<- c("y","para","entonces","asi","mas","no", "oh","de","¡","´","!","¡ay","tanto","sin","embargo","muy","tambien")
+CleanData <- tm_map(CleanData, removeWords, mystopwords)
+```
+
+#PASO 6. se convierte el cuerpo en una tabla con datos estructurados
+```{r}
+Tab_datos_estruc <- DocumentTermMatrix(CleanData)
+inspect(Tab_datos_estruc)
+dim(Tab_datos_estruc)
+
+matriz  <-  as.matrix(Tab_datos_estruc)
+matriz
+```
+
+
+#también se puede aplicar la sentencia TF-Idf weights, de la siguiente manera
+#Tab_datos_estruc_2 <- DocumentTermMatrix(CleanData, control = list(weighting = weightTfIdf))
+#inspect(Tab_datos_estruc_2)
+
+#frecuencia = data.frame(sort(colSums(as.matrix(Tab_datos_estruc_2)), decreasing=TRUE))
+#frecuencia
+#wordcloud(rownames(frecuencia), frecuencia[,1], max.words=50, colors=brewer.pal(1, "Dark2"))
+
+# O bien se puede por fila
+```{r}
+term.freq <- rowSums(as.matrix(Tab_datos_estruc))
+term.freq
+```
+
+#PASO 7. Hacer la nube de palabras
+```{r}
+rownames(matriz)<-c("poema1","poema2","poema3","poema4","poema5","poema6","poema7","poema8","poema9","poema10")
+freq.term <- colSums(as.matrix(Tab_datos_estruc))
+freq.term  <- subset(freq.term , freq.term >= 2)
+dat.frame <- data.frame(term = names(freq.term), freq = freq.term)
+dat.frame
+
+wordcloud2(dat.frame, size = 0.3,  shape="star", backgroundColor = 'white', fontFamily = "GabSon")
+wordcloud2(dat.frame, size = 1,shape = 'c')
+```
+
+#Grafico de frecuencias
+```{r}
+ggplot(dat.frame, aes(x = term, y = freq)) + geom_bar(stat = "identity") +
+  xlab("Terminos") + ylab("Cuenta") + coord_flip()
+```
+
+#otro grafico
+```{r}
+barplot(dat.frame[1:35,]$freq, las = 2, names.arg = dat.frame[1:35,]$term,
+        col ="blue", main ="Palabras más frecuentes",
+        ylab = "frecuencia de palabras")
+```
+
+# PASO 8. se calcula la frecuencia de palabras y se ordenan por frecuencia
+```{r}
+freq.word <- sort(colSums(matriz), decreasing = T)
+freq.word
+```
+
+# colors
+```{r}
+pal <- brewer.pal(9, "BuGn")
+pal <- pal[-(1:4)]
+```
+
+#Se grafica la nuve de palabras
+```{r}
+library(wordcloud)
+wordcloud(word = names(freq.word), frec = freq.word, min.freq = 1,
+          random.order = F, colors = pal)
+```
+
+# o tambien puede hacer la siguiente nube de palabras
+```{r}
+wordcloud(words = names(freq.word), freq = freq.word, min.freq = 1,
+          random.order = F, colors=brewer.pal(8, "Dark2"))
+```
+
+#PASO 9. clustering
+
+#Realizaremos análisis de agrupaciones jerárquicas para identificar grupos de palabras relacionados entre sí, 
+#a partir de la distancia que existe entre ellos.
+
+
+#se inicia con la remocion de los términos dispersos en nuestra matriz de términos, para así conservar únicamente 
+#las palabras más frecuentes y obtener resultados más interpretables del agrupamiento.
+```{r}
+new_Tab_datos_estruc <- removeSparseTerms(Tab_datos_estruc, sparse = 0.95)
+```
+
+# la transpuesta de una matriz: m1=t(tdm2)
+```{r}
+Matriz_2 <- as.matrix(new_Tab_datos_estruc)
+Matriz_2 <- t(Matriz_2)
+```
+
+# Matriz de Distancia
+```{r}
+matriz_Dist <- dist(scale(Matriz_2))
+```
+
+# agrupamiento jerárquico usando la función hclust
+```{r}
+fit <- hclust(matriz_Dist, method = "ward.D2")
+```
+
+#Graficamos los resultados usando plot para generar un dendrograma.
+```{r}
+plot(fit,hang = -1, main = "Dendrograma poemas")
+rect.hclust(fit, k = 2) # el árbol de recorta en 2 clusters
+```
+
+#tambien se puede hacer uso del método K-means
+```{r}
+k2 <- kmeans(Matriz_2, centers = 2)
+str(k2)
+fviz_cluster(k2, data = Matriz_2)
+```
